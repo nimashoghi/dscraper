@@ -1,4 +1,4 @@
-import { ProcessPromiseFunction, Queue } from "bull";
+import { Job, JobOptions, ProcessPromiseFunction, Queue } from "bull";
 import { MongoClientOptions } from "mongodb";
 declare type QueuesHelper<TTag extends string | number | symbol, TData extends {
     [K in TTag]: any;
@@ -11,7 +11,7 @@ declare type QueuesHelper<TTag extends string | number | symbol, TData extends {
 };
 export declare type Queues<T> = QueuesHelper<keyof T, T>;
 export declare type QueueDefinition<TData> = {
-    concurrency: number;
+    concurrency?: number;
     storageKey?: string;
 } & ({
     callback: ProcessPromiseFunction<TData>;
@@ -19,6 +19,7 @@ export declare type QueueDefinition<TData> = {
     processor: string;
 });
 export interface UpdatedQueue<T> extends Queue<T> {
+    push: (data: T, options?: JobOptions) => Promise<Job<T>>;
     save: (id: string, ...data: any[]) => Promise<void>;
     start: () => Promise<void>;
 }
