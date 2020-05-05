@@ -12,6 +12,7 @@ declare type QueuesHelper<TTag extends string | number | symbol, TData extends {
 export declare type QueueDataTypes<T> = QueuesHelper<keyof T, T>;
 export declare type QueueDefinition<TData> = {
     concurrency?: number;
+    options?: JobOptions;
     storageKey?: string;
 } & ({
     callback: ProcessPromiseFunction<TData>;
