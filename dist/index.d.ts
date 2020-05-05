@@ -19,7 +19,7 @@ export declare type QueueDefinition<TData> = {
     processor: string;
 });
 export interface UpdatedQueue<T> extends Queue<T> {
-    push: (data: T, options?: JobOptions) => Promise<Job<T>>;
+    push: (data: Omit<T, "tag">, options?: JobOptions) => Promise<Job<T>>;
     save: (...data: {
         id: string;
     }[]) => Promise<void>;

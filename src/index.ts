@@ -19,7 +19,7 @@ export type QueueDefinition<TData> = {
 } & ({callback: ProcessPromiseFunction<TData>} | {processor: string})
 
 export interface UpdatedQueue<T> extends Queue<T> {
-    push: (data: T, options?: JobOptions) => Promise<Job<T>>
+    push: (data: Omit<T, "tag">, options?: JobOptions) => Promise<Job<T>>
     save: (...data: {id: string}[]) => Promise<void>
     start: () => Promise<void>
 }
@@ -42,11 +42,11 @@ export const createQueues = <T extends QueueDataTypes<any>>(
     let client: MongoClient | undefined
 
     const info = (Object.fromEntries(
-        Object.entries(queues).map(([key, value_]) => {
+        Object.entries(queues).map(([tag, value_]) => {
             const queue = ((redisUrl === undefined
-                ? new QueueConstructor(key)
+                ? new QueueConstructor(tag)
                 : new QueueConstructor(
-                      key,
+                      tag,
                       redisUrl,
                   )) as unknown) as UpdatedQueue<any>
 
@@ -58,7 +58,7 @@ export const createQueues = <T extends QueueDataTypes<any>>(
                 }
                 const collection = client
                     .db(dbName)
-                    .collection(value.storageKey ?? key)
+                    .collection(value.storageKey ?? tag)
                 await collection.bulkWrite(
                     data.map(($set) => ({
                         updateOne: {
@@ -70,24 +70,24 @@ export const createQueues = <T extends QueueDataTypes<any>>(
                 )
             }
             queue.push = async (data, options) =>
-                await queue.add(key, data, options)
+                await queue.add(tag, {...data, tag}, options)
 
             if ("callback" in value) {
                 queue.start = async () =>
                     await queue.process(
-                        key,
+                        tag,
                         value.concurrency ?? 1,
                         value.callback,
                     )
-                return [key, queue] as const
+                return [tag, queue] as const
             } else if ("processor" in value) {
                 queue.start = async () =>
                     await queue.process(
-                        key,
+                        tag,
                         value.concurrency ?? 1,
                         value.processor,
                     )
-                return [key, queue] as const
+                return [tag, queue] as const
             } else {
                 throw new Error(
                     `Queue definition must either have a callback or a processor`,
