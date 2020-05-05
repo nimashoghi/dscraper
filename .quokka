@@ -1,0 +1,9 @@
+{
+    "ts": {
+        "compilerOptions": {
+            "target": "es2019",
+            "experimentalDecorators": true,
+            "emitDecoratorMetadata": true
+        }
+    }
+}
