@@ -96,9 +96,6 @@ typings/
 # nuxt.js build output
 .nuxt
 
-# rollup.js default build output
-dist/
-
 # Uncomment the public line if your project uses Gatsby
 # https://nextjs.org/blog/next-9-1#public-directory-support
 # https://create-react-app.dev/docs/using-the-public-folder/#docsNav
@@ -138,4 +135,3 @@ temp/
 # End of https://www.gitignore.io/api/visualstudiocode,linux,node
 
 # Custom rules (everything added below won't be overriden by 'Generate .gitignore File' if you use 'Update' option)
-
