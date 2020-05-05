@@ -20,7 +20,7 @@ export type QueueDefinition<TData> = {
 
 export interface UpdatedQueue<T> extends Queue<T> {
     push: (data: T, options?: JobOptions) => Promise<Job<T>>
-    save: (id: string, ...data: any[]) => Promise<void>
+    save: (...data: {id: string}[]) => Promise<void>
     start: () => Promise<void>
 }
 
@@ -52,7 +52,7 @@ export const createQueues = <T extends QueueDataTypes<any>>(
 
             const value = value_ as QueueDefinition<any>
 
-            queue.save = async (id, ...data) => {
+            queue.save = async (...data) => {
                 if (!client) {
                     client = await MongoClient.connect("", mongo)
                 }
@@ -62,7 +62,7 @@ export const createQueues = <T extends QueueDataTypes<any>>(
                 await collection.bulkWrite(
                     data.map(($set) => ({
                         updateOne: {
-                            filter: {_id: id},
+                            filter: {_id: $set.id},
                             update: {$set},
                             upsert: true,
                         },

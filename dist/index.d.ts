@@ -9,7 +9,7 @@ declare type QueuesHelper<TTag extends string | number | symbol, TData extends {
         tag: K;
     };
 };
-export declare type Queues<T> = QueuesHelper<keyof T, T>;
+export declare type QueueDataTypes<T> = QueuesHelper<keyof T, T>;
 export declare type QueueDefinition<TData> = {
     concurrency?: number;
     storageKey?: string;
@@ -20,10 +20,12 @@ export declare type QueueDefinition<TData> = {
 });
 export interface UpdatedQueue<T> extends Queue<T> {
     push: (data: T, options?: JobOptions) => Promise<Job<T>>;
-    save: (id: string, ...data: any[]) => Promise<void>;
+    save: (...data: {
+        id: string;
+    }[]) => Promise<void>;
     start: () => Promise<void>;
 }
-export declare type QueuesReturnType<T extends Queues<any>> = readonly [{
+export declare type QueuesReturnType<T extends QueueDataTypes<any>> = readonly [{
     [K in keyof T]: UpdatedQueue<T[K]>;
 }, (...queues: (keyof T)[]) => Promise<void>];
 export interface CreateQueueOptions {
