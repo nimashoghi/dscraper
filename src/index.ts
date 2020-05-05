@@ -15,6 +15,7 @@ export type QueueDataTypes<T> = QueuesHelper<keyof T, T>
 
 export type QueueDefinition<TData> = {
     concurrency?: number
+    options?: JobOptions
     storageKey?: string
 } & ({callback: ProcessPromiseFunction<TData>} | {processor: string})
 
@@ -70,7 +71,11 @@ export const createQueues = <T extends QueueDataTypes<any>>(
                 )
             }
             queue.push = async (data, options) =>
-                await queue.add(tag, {...data, tag}, options)
+                await queue.add(
+                    tag,
+                    {...data, tag},
+                    {...(value.options ?? {}), ...(options ?? {})},
+                )
 
             if ("callback" in value) {
                 queue.start = async () =>
