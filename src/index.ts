@@ -32,13 +32,14 @@ export type QueuesReturnType<T extends QueueDataTypes<any>> = readonly [
 
 export interface CreateQueueOptions {
     dbName?: string
+    defaultOptions?: JobOptions
     mongo: MongoClientOptions & {url: string}
     redis: {url: string}
 }
 
 export const createQueues = <T extends QueueDataTypes<any>>(
     queues: {[K in keyof T]: QueueDefinition<T[K]>},
-    {dbName = "scraper", mongo, redis}: CreateQueueOptions,
+    {dbName = "scraper", defaultOptions, mongo, redis}: CreateQueueOptions,
 ): QueuesReturnType<T> => {
     let client: MongoClient | undefined
 
@@ -75,7 +76,11 @@ export const createQueues = <T extends QueueDataTypes<any>>(
             await queue.add(
                 tag,
                 {...data, tag},
-                {...(value.options ?? {}), ...(options ?? {})},
+                {
+                    ...(defaultOptions ?? {}),
+                    ...(value.options ?? {}),
+                    ...(options ?? {}),
+                },
             )
 
         if ("callback" in value) {
