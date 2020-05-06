@@ -2,11 +2,11 @@ import Bull, { JobOptions, ProcessPromiseFunction, Queue } from "bull";
 import { MongoClientOptions } from "mongodb";
 declare module "bull" {
     interface Queue<T> {
+        init(): Promise<void>;
         push(data: Omit<T, "tag">, options?: Bull.JobOptions): Promise<Bull.Job<T>>;
         save(...data: {
             id: string;
         }[]): Promise<void>;
-        start(): Promise<void>;
     }
 }
 declare type QueuesHelper<TTag extends string | number | symbol, TData extends {

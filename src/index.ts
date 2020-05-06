@@ -4,12 +4,12 @@ import {MongoClient, MongoClientOptions} from "mongodb"
 
 declare module "bull" {
     export interface Queue<T> {
+        init(): Promise<void>
         push(
             data: Omit<T, "tag">,
             options?: Bull.JobOptions,
         ): Promise<Bull.Job<T>>
         save(...data: {id: string}[]): Promise<void>
-        start(): Promise<void>
     }
 }
 
@@ -75,7 +75,7 @@ export const createQueues = <T extends QueueDataTypes<any>>(
             )
 
         if ("callback" in value) {
-            queue.start = async () => {
+            queue.init = async () => {
                 if (value.concurrency === undefined) {
                     await queue.process(tag, value.callback)
                 } else {
@@ -84,7 +84,7 @@ export const createQueues = <T extends QueueDataTypes<any>>(
             }
             return [tag, queue] as const
         } else if ("processor" in value) {
-            queue.start = async () => {
+            queue.init = async () => {
                 if (value.concurrency === undefined) {
                     await queue.process(tag, require.resolve(value.processor))
                 } else {
@@ -114,7 +114,7 @@ export const createQueues = <T extends QueueDataTypes<any>>(
             entries
                 .filter(([name]) => queues_.has(name))
                 .map(async ([, queue]) => {
-                    await queue.start()
+                    await queue.init()
                 }),
         )
     }
