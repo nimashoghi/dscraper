@@ -54,6 +54,10 @@ export const createQueues = <T extends QueueDataTypes<any>>(
                     ...mongo,
                 })
             }
+            if (data.length === 0) {
+                return
+            }
+
             const collection = client
                 .db(dbName)
                 .collection(value.storageKey ?? tag)
