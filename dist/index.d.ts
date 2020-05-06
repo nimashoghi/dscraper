@@ -1,5 +1,14 @@
-import { Job, JobOptions, ProcessPromiseFunction, Queue } from "bull";
+import Bull, { JobOptions, ProcessPromiseFunction, Queue } from "bull";
 import { MongoClientOptions } from "mongodb";
+declare module "bull" {
+    interface Queue<T> {
+        push(data: Omit<T, "tag">, options?: Bull.JobOptions): Promise<Bull.Job<T>>;
+        save(...data: {
+            id: string;
+        }[]): Promise<void>;
+        start(): Promise<void>;
+    }
+}
 declare type QueuesHelper<TTag extends string | number | symbol, TData extends {
     [K in TTag]: any;
 }> = {
@@ -19,23 +28,18 @@ export declare type QueueDefinition<TData> = {
 } | {
     processor: string;
 });
-export interface UpdatedQueue<T> extends Queue<T> {
-    push: (data: Omit<T, "tag">, options?: JobOptions) => Promise<Job<T>>;
-    save: (...data: {
-        id: string;
-    }[]) => Promise<void>;
-    start: () => Promise<void>;
-}
 export declare type QueuesReturnType<T extends QueueDataTypes<any>> = readonly [{
-    [K in keyof T]: UpdatedQueue<T[K]>;
+    [K in keyof T]: Queue<T[K]>;
 }, (...queues: (keyof T)[]) => Promise<void>];
 export interface CreateQueueOptions {
     dbName?: string;
     mongo: MongoClientOptions & {
         url: string;
     };
-    redisUrl?: string;
+    redis: {
+        url: string;
+    };
 }
-export declare const createQueues: <T extends QueuesHelper<string | number | symbol, any>>(queues: { [K in keyof T]: QueueDefinition<T[K]>; }, { dbName, mongo, redisUrl }: CreateQueueOptions) => QueuesReturnType<T>;
+export declare const createQueues: <T extends QueuesHelper<string | number | symbol, any>>(queues: { [K in keyof T]: QueueDefinition<T[K]>; }, { dbName, mongo, redis }: CreateQueueOptions) => QueuesReturnType<T>;
 export {};
 //# sourceMappingURL=index.d.ts.map
