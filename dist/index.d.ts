@@ -31,9 +31,11 @@ export declare type QueuesReturnType<T extends QueueDataTypes<any>> = readonly [
 }, (...queues: (keyof T)[]) => Promise<void>];
 export interface CreateQueueOptions {
     dbName?: string;
-    mongo?: MongoClientOptions | undefined;
+    mongo: MongoClientOptions & {
+        url: string;
+    };
     redisUrl?: string;
 }
-export declare const createQueues: <T extends QueuesHelper<string | number | symbol, any>>(queues: { [K in keyof T]: QueueDefinition<T[K]>; }, { dbName, mongo, redisUrl }?: CreateQueueOptions) => QueuesReturnType<T>;
+export declare const createQueues: <T extends QueuesHelper<string | number | symbol, any>>(queues: { [K in keyof T]: QueueDefinition<T[K]>; }, { dbName, mongo, redisUrl }: CreateQueueOptions) => QueuesReturnType<T>;
 export {};
 //# sourceMappingURL=index.d.ts.map

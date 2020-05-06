@@ -32,13 +32,13 @@ export type QueuesReturnType<T extends QueueDataTypes<any>> = readonly [
 
 export interface CreateQueueOptions {
     dbName?: string
-    mongo?: MongoClientOptions | undefined
+    mongo: MongoClientOptions & {url: string}
     redisUrl?: string
 }
 
 export const createQueues = <T extends QueueDataTypes<any>>(
     queues: {[K in keyof T]: QueueDefinition<T[K]>},
-    {dbName = "scraper", mongo, redisUrl}: CreateQueueOptions = {},
+    {dbName = "scraper", mongo, redisUrl}: CreateQueueOptions,
 ): QueuesReturnType<T> => {
     let client: MongoClient | undefined
 
@@ -55,7 +55,10 @@ export const createQueues = <T extends QueueDataTypes<any>>(
 
             queue.save = async (...data) => {
                 if (!client) {
-                    client = await MongoClient.connect("", mongo)
+                    client = await MongoClient.connect(mongo.url, {
+                        useNewUrlParser: true,
+                        ...mongo,
+                    })
                 }
                 const collection = client
                     .db(dbName)
