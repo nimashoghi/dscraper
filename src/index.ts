@@ -42,66 +42,67 @@ export const createQueues = <T extends QueueDataTypes<any>>(
 ): QueuesReturnType<T> => {
     let client: MongoClient | undefined
 
-    const info = (Object.fromEntries(
-        Object.entries(queues).map(([tag, value_]) => {
-            const queue = new Bull(tag, redis.url)
+    const entries = Object.entries(queues).map(([tag, value_]) => {
+        const queue = new Bull(tag, redis.url)
 
-            const value = value_ as QueueDefinition<any>
+        const value = value_ as QueueDefinition<any>
 
-            queue.save = async (...data) => {
-                if (!client) {
-                    client = await MongoClient.connect(mongo.url, {
-                        useNewUrlParser: true,
-                        ...mongo,
-                    })
+        queue.save = async (...data) => {
+            if (!client) {
+                client = await MongoClient.connect(mongo.url, {
+                    useNewUrlParser: true,
+                    ...mongo,
+                })
+            }
+            const collection = client
+                .db(dbName)
+                .collection(value.storageKey ?? tag)
+            await collection.bulkWrite(
+                data.map(($set) => ({
+                    updateOne: {
+                        filter: {_id: $set.id},
+                        update: {$set},
+                        upsert: true,
+                    },
+                })),
+            )
+        }
+        queue.push = async (data, options) =>
+            await queue.add(
+                tag,
+                {...data, tag},
+                {...(value.options ?? {}), ...(options ?? {})},
+            )
+
+        if ("callback" in value) {
+            queue.start = async () => {
+                if (value.concurrency === undefined) {
+                    await queue.process(tag, value.callback)
+                } else {
+                    await queue.process(tag, value.concurrency, value.callback)
                 }
-                const collection = client
-                    .db(dbName)
-                    .collection(value.storageKey ?? tag)
-                await collection.bulkWrite(
-                    data.map(($set) => ({
-                        updateOne: {
-                            filter: {_id: $set.id},
-                            update: {$set},
-                            upsert: true,
-                        },
-                    })),
-                )
             }
-            queue.push = async (data, options) =>
-                await queue.add(
-                    tag,
-                    {...data, tag},
-                    {...(value.options ?? {}), ...(options ?? {})},
-                )
-
-            if ("callback" in value) {
-                queue.start = async () =>
-                    value.concurrency
-                        ? await queue.process(
-                              tag,
-                              value.concurrency,
-                              value.callback,
-                          )
-                        : await queue.process(tag, value.callback)
-                return [tag, queue] as const
-            } else if ("processor" in value) {
-                queue.start = async () =>
-                    value.concurrency
-                        ? await queue.process(
-                              tag,
-                              value.concurrency,
-                              value.processor,
-                          )
-                        : await queue.process(tag, value.processor)
-                return [tag, queue] as const
-            } else {
-                throw new Error(
-                    `Queue definition must either have a callback or a processor`,
-                )
+            return [tag, queue] as const
+        } else if ("processor" in value) {
+            queue.start = async () => {
+                if (value.concurrency === undefined) {
+                    await queue.process(tag, require.resolve(value.processor))
+                } else {
+                    await queue.process(
+                        tag,
+                        value.concurrency,
+                        require.resolve(value.processor),
+                    )
+                }
             }
-        }),
-    ) as unknown) as {
+            return [tag, queue] as const
+        } else {
+            throw new Error(
+                `Queue definition must either have a callback or a processor`,
+            )
+        }
+    })
+    const info = (Object.fromEntries(entries) as unknown) as {
         [K in keyof T]: Queue<T[K]>
     }
 
@@ -110,7 +111,7 @@ export const createQueues = <T extends QueueDataTypes<any>>(
             queues.length === 0 ? (Object.keys(info) as (keyof T)[]) : queues,
         )
         await Promise.all(
-            Object.entries(info)
+            entries
                 .filter(([name]) => queues_.has(name))
                 .map(async ([, queue]) => {
                     await queue.start()
